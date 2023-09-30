@@ -1,3 +1,6 @@
 zig-cache
 *.swp
 .vscode
+*.o
+*.a
+build

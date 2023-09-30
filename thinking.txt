@@ -1,0 +1,98 @@
+MODULARITY
+I'm going to be writing quite a bit of useful graphics code in this project
+which could be quite useful in future games. It would be kinda good if I could
+make the useful code somewhat seperate from the specific code so that I could
+easily reuse it in another project. However, I don't really want to add a bunch
+of complexity to my shit by making there be two different projects and blah blah
+blah.
+I guess maybe I could just put all the reusable code in it's own folder
+inside the src folder so that if at some point I wanted to reuse it I could
+just copy and paste it from there. I guess I could also split it out into it's
+own library at some point but I don't see the point of going to the effort tbh.
+
+
+
+The future of bullet hell games and shmups
+
+The shump player community is kind of like any other game community but if you
+got rid of all the normies and all the people who get paid to stream or whatever
+and just have the freakshow 5+ hours a day full blown crazy people. Maybe I'm
+exaggerating a bit, but I have to admit I don't liek the shmup community half as
+much as I like the games.
+Would be nice to be able to make a game that could find a niche with the semi
+normies or whatever you call them. Reasonably well adjusted individuals who
+wanna strive to play well etc but are also sportsmanlike and not completely
+insane. Actually on that note perhaps encouraging sportsmanlike behaviour would
+be a good step. I would never use the word "toxic" to refer to bad behaviour
+though because it is a faggy term and it is unaspirational which is why it's
+boring. Nobody aspires to be non toxic because it is your natural state, but to
+be a good sportsman is something you have to do on purpose.
+If you respect a game you ought to aspire to be sportsmanlike with regards to it
+in my humble opinion. (of course nutjobs would say "HEHEHEH I HATE this game,
+I'm just playing to get the highscore and flex on you plebs", but it is what it
+is I suppose).
+
+Yeah so I do have the solution perhaps. This idea that comes from the
+experimentation that I did with vobbango is interesting to me because it keeps
+the bullet hell aspects of the game in a form that is rather natural and
+untainted, while also allowing it to mesh pretty seamlessly with other types of
+gameplay and be something along the lines of an open world game.
+
+I will include difficulty settings for the cowards / crazy people too, but I 
+would like to build the game with just normal difficulty first, that way the
+game will still have a healthy difficulty curve. Some games with difficulty
+settings seem to suffer from having an extremely flat level of difficulty the
+whole way through, whereas old games with no difficulty settings could hit you
+with the occasional crazy moment then let you relax from time to time too. So
+yeah, when I am designing medium difficulty, I want it to be as hard as I feel
+comfortable with, then I'll go back and do hard mode with the hardest parts of
+medium being kind of like the baseline difficulty. Then after that I will do
+easy mode with help from my wife, ideally I want boss parts to still take a
+couple of tries on easy mode if you're not very good.
+
+Now, in terms of story and setting type of stuff, this has some slightly
+different requirements than the comic book idea. This does not just allow you to
+ignore the story completely, because you kind of need to know where you are
+supposed to be going.
+
+Also it needs a fishing minigame.
+
+I would still like to be able to release in chapters but it's gonna be kind of
+messy. Oh well. So I sort of like the idea that the game is in this sort of tree
+like structure, but still has a little bit of the feel of zelda 1. 
+
+LOADING IN GAME DATA
+I just noticed that janet seems to have a standard json parsing functionality
+now. That is pretty cool actually, and it kind of makes me think that I should
+set up more of the game with janet than I had planned.
+
+I mean setting up main menu type scenes with janet would be easy. You have a 
+special scene where you can set up rectangles that are drawn with whatever
+shader and textures, and you can run gui shit. Shaders will be updated with the
+current time even when they are not in the active scene, so we can use the scene
+stack for yielding til gui action. If we need an immediate response, the
+script can add callbacks to the gui elements and modify the state of the scene
+that way.
+
+In fact, the whole gui system could actually be implemented from the script
+side, with the game engine just providing the ability to move visual elements
+around the screen. Only thing to note is they probably either need to all be
+batched, or none of them should be batched because otherwise the draw order
+would be fucked up. I think I'll make them all batched, but the scene background
+is a special case, it can be drawn with different shaders textures etc. Multiple
+texture rectangles are not really necessary anymore so I don't think I will
+bother with that anymore, adding additional uniforms to shaders could be used
+from scripts but I am uncertain how useful that would be. No actually it
+probably would be quite useful in boss fights and adding variation to levels so
+I will do that. Actually so would multiple textures, so yeah will do both of
+those things.
+
+From the game's init script or whatever, you can initialise various shaders and
+textures, but some are special ones that are mandatory to set up, for example 
+the default shader that draws gui elements and game content, and the texture
+atlas and corresponding texture.
+
+So yeah then it will probably set up stuff like characters and shit.
+
+Eventually I would also like to add 3d backgrounds but that is for a later
+version.
