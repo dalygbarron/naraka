@@ -1,4 +1,5 @@
 #include "Shader.hh"
+#include "Util.hh"
 #include <math.h>
 #include <spdlog/spdlog.h>
 
@@ -17,9 +18,9 @@ char const *getShaderLog(GLuint shader) {
         return "";
     }
     int maxLength = 0;
-    glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &maxLength);
+    gl(GetShaderiv(shader, GL_INFO_LOG_LENGTH, &maxLength));
     char *infoLog = new char[maxLength];
-    glGetShaderInfoLog(shader, maxLength, NULL, infoLog);
+    gl(GetShaderInfoLog(shader, maxLength, NULL, infoLog));
     return infoLog;
 }
 
@@ -35,9 +36,9 @@ char const *getProgramLog(GLuint program) {
         return "";
     }
     int maxLength = 0;
-    glGetProgramiv(program, GL_INFO_LOG_LENGTH, &maxLength);
+    gl(GetProgramiv(program, GL_INFO_LOG_LENGTH, &maxLength));
     char *infoLog = new char[maxLength];
-    glGetProgramInfoLog(program, maxLength, NULL, infoLog);
+    gl(GetProgramInfoLog(program, maxLength, NULL, infoLog));
     return infoLog;
 }
 
@@ -51,15 +52,15 @@ char const *getProgramLog(GLuint program) {
 GLuint makeShader(char const *src, GLenum type) {
     GLint length = strlen(src);
     GLuint shader = glCreateShader(type);
-    glShaderSource(shader, 1, &src, &length);
-    glCompileShader(shader);
+    gl(ShaderSource(shader, 1, &src, &length));
+    gl(CompileShader(shader));
     GLint compiled = GL_FALSE;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
+    gl(GetShaderiv(shader, GL_COMPILE_STATUS, &compiled));
     if (compiled != GL_TRUE) {
         char const *log = getShaderLog(shader);
         spdlog::error("Couldn't compile shader {}: {}", shader, log);
         delete[] log;
-        glDeleteShader(shader);
+        gl(DeleteShader(shader));
         return 0;
     }
     return shader;
@@ -82,9 +83,9 @@ Shader::Drawable::Drawable(
 }
 
 Shader::Drawable::~Drawable() {
-    glDeleteBuffers(1, &(vertexBuffer));
-    if (uvBuffer) glDeleteBuffers(1, &(uvBuffer));
-    if (colourBuffer) glDeleteBuffers(1, &(colourBuffer));
+    gl(DeleteBuffers(1, &(vertexBuffer)));
+    if (uvBuffer) gl(DeleteBuffers(1, &(uvBuffer)));
+    if (colourBuffer) gl(DeleteBuffers(1, &(colourBuffer)));
     //delete[] textures;
 }
 
@@ -115,39 +116,42 @@ Shader::Shader(
 }
 
 Shader::~Shader() {
-    glDeleteProgram(program);
+    gl(DeleteProgram(program));
     delete[] samplers;
     delete[] extras;
 }
 
 void Shader::draw(Drawable &drawable) {
-    glUseProgram(program);
     unsigned int n = drawable.predraw();
-    glBindBuffer(GL_ARRAY_BUFFER, drawable.vertexBuffer);
-    glVertexAttribPointer(posAttr, 2, GL_FLOAT, false, 0, 0);
+    gl(UseProgram(program));
+    gl(BindBuffer(GL_ARRAY_BUFFER, drawable.vertexBuffer));
+    gl(EnableVertexAttribArray(posAttr));
+    if (uvAttr) gl(EnableVertexAttribArray(uvAttr));
+    if (colAttr) gl(EnableVertexAttribArray(colAttr));
+    gl(VertexAttribPointer(posAttr, 2, GL_FLOAT, false, 0, 0));
     if (drawable.uvBuffer) {
-        glBindBuffer(GL_ARRAY_BUFFER, drawable.uvBuffer);
-        glVertexAttribPointer(uvAttr, 2, GL_SHORT, false, 0, 0);
+        gl(BindBuffer(GL_ARRAY_BUFFER, drawable.uvBuffer));
+        gl(VertexAttribPointer(uvAttr, 2, GL_SHORT, false, 0, 0));
     }
     if (drawable.colourBuffer) {
-        glBindBuffer(GL_ARRAY_BUFFER, drawable.colourBuffer);
-        glVertexAttribPointer(colAttr, 4, GL_BYTE, true, 0, 0);
+        gl(BindBuffer(GL_ARRAY_BUFFER, drawable.colourBuffer));
+        gl(VertexAttribPointer(colAttr, 4, GL_BYTE, true, 0, 0));
     }
     if (drawable.nTextures > 0) {
         for (int i = 0; i < fmin(drawable.nTextures, nSamplers); i++) {
-            glActiveTexture(GL_TEXTURE0 + i);
+            gl(ActiveTexture(GL_TEXTURE0 + i));
             drawable.textures[i]->bind();
-            if (samplers[i].sampler) glUniform1i(samplers[i].sampler, i);
+            if (samplers[i].sampler) gl(Uniform1i(samplers[i].sampler, i));
             if (samplers[i].invSize) {
-                glUniform2f(
+                gl(Uniform2f(
                     samplers[i].invSize,
                     drawable.textures[i]->invSize.x,
                     drawable.textures[i]->invSize.y
-                );
+                ));
             }
         }
     }
-    glDrawArrays(GL_TRIANGLES, 0, n);
+    gl(DrawArrays(GL_TRIANGLES, 0, n));
 }
 
 std::optional<Shader> Shader::create(
@@ -163,61 +167,58 @@ std::optional<Shader> Shader::create(
     if (!frag) return {};
     GLuint vert = makeShader(vertSrc, GL_VERTEX_SHADER);
     if (!vert) {
-        glDeleteShader(frag);
+        gl(DeleteShader(frag));
         return {};
     }
-    GLuint program = glCreateProgram();
+    GLuint program = gl(CreateProgram());
     if (!program) {
         spdlog::error("Couldn't create shader program");
-        glDeleteShader(frag);
-        glDeleteShader(vert);
+        gl(DeleteShader(frag));
+        gl(DeleteShader(vert));
         return {};
     }
-    glAttachShader(program, frag);
-    glAttachShader(program, vert);
-    glLinkProgram(program);
+    gl(AttachShader(program, frag));
+    gl(AttachShader(program, vert));
+    gl(LinkProgram(program));
     GLint linkSuccess = GL_TRUE;
-    glGetProgramiv(program, GL_LINK_STATUS, &linkSuccess);
+    gl(GetProgramiv(program, GL_LINK_STATUS, &linkSuccess));
     if (linkSuccess != GL_TRUE) {
         char const *programLog = getProgramLog(program);
         spdlog::error("Couldn't link shader program: {}", programLog);
         delete[] programLog;
-        glDeleteShader(frag);
-        glDeleteShader(vert);
-        glDeleteProgram(program);
+        gl(DeleteShader(frag));
+        gl(DeleteShader(vert));
+        gl(DeleteProgram(program));
         return {};
     }
-    glDetachShader(program, frag);
-    glDetachShader(program, vert);
-    glDeleteShader(frag);
-    glDeleteShader(vert);
+    gl(DetachShader(program, frag));
+    gl(DetachShader(program, vert));
+    gl(DeleteShader(frag));
+    gl(DeleteShader(vert));
     // Set up engine wide attributes and uniforms.
-    glUseProgram(program);
-    GLint position = glGetAttribLocation(program, "position");
-    GLint uv = glGetAttribLocation(program, "uv");
-    GLint colour = glGetAttribLocation(program, "colour");
-    glEnableVertexAttribArray(position);
-    glEnableVertexAttribArray(uv);
-    glEnableVertexAttribArray(colour);
-    GLint invCanvas = glGetUniformLocation(program, "canvasInv");
-    GLint time = glGetUniformLocation(program, "time");
+    gl(UseProgram(program));
+    GLint position = gl(GetAttribLocation(program, "position"));
+    GLint uv = gl(GetAttribLocation(program, "uv"));
+    GLint colour = gl(GetAttribLocation(program, "colour"));
+    GLint invCanvas = gl(GetUniformLocation(program, "canvasInv"));
+    GLint time = gl(GetUniformLocation(program, "time"));
     if (invCanvas) {
         // TODO: need to get screen size here.
-        glUniform2f(
+        gl(Uniform2f(
             invCanvas,
             0.1,
             0.1
-        );
+        ));
     }
     // Set up samplers and extras
     Sampler *samplerUniforms = new Sampler[nSamplers];
     for (int i = 0; i < nSamplers; i++) {
-        samplerUniforms[i].sampler = glGetUniformLocation(program, samplers[i]);
+        samplerUniforms[i].sampler = gl(GetUniformLocation(program, samplers[i]));
         strcpy(invNameBuffer + INV_NAME_OFFSET, samplers[i]);
-        samplerUniforms[i].invSize = glGetUniformLocation(
+        samplerUniforms[i].invSize = gl(GetUniformLocation(
             program,
             invNameBuffer
-        );
+        ));
         if (!samplerUniforms[i].sampler) {
             spdlog::warn("program {} lacks uniform {}", program, samplers[i]);
         }
@@ -227,7 +228,7 @@ std::optional<Shader> Shader::create(
     }
     GLint *shaderExtras = new GLint[nExtras];
     for (int i = 0; i < nExtras; i++) {
-        shaderExtras[i] = glGetUniformLocation(program, extras[i]);
+        shaderExtras[i] = gl(GetUniformLocation(program, extras[i]));
         if (!shaderExtras[i]) {
             spdlog::warn("program {} lacks uniform {}", program, extras[i]);
         }

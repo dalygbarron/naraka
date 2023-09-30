@@ -1,4 +1,13 @@
 #include "Util.hh"
+#include <GL/glew.h>
+#include <spdlog/spdlog.h>
+
+void checkGl(int line, char const *file) {
+    GLenum err;
+    while((err = glGetError()) != GL_NO_ERROR) {
+        spdlog::error("gl error 0x{:x} at {}:{}", err, file, line);
+    }
+}
 
 Util::Rect::Rect() {
     pos.x = 0;

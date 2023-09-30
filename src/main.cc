@@ -15,6 +15,7 @@
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 768
 
+
 SDL_Window *window = NULL;
 SDL_GLContext context;
 
@@ -117,17 +118,13 @@ int main(int argc, char const **argv) {
             spdlog::error("Couldn't make poster");
             goto end;
         }
-        glClearColor(0.f, 0.1f, 0.2f, 1.f);
+        gl(ClearColor(0.f, 0.1f, 0.2f, 1.f));
         for (int i = 0; i < 5000; i++) {
             SDL_Event e;
             while (SDL_PollEvent(&e) != 0) {
                 if (e.type == SDL_QUIT) goto end;
             }
-            GLenum err;
-            while((err = glGetError()) != GL_NO_ERROR) {
-                spdlog::error("gl error 0x{:x}", err);
-            }
-            glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+            gl(Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
             shader->draw(*poster);
             SDL_GL_SwapWindow(window);
         }

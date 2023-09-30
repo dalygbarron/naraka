@@ -27,15 +27,15 @@ Poster::Poster(
     fillVertexArray<GLfloat>(vertexRect, vertices);
     fillVertexArray<GLshort>(uvRect.flipped(true, false), uvs);
     fillColourArray(colour, colours);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, 12, vertices, GL_STATIC_DRAW);
+    gl(BindBuffer(GL_ARRAY_BUFFER, vertexBuffer));
+    gl(BufferData(GL_ARRAY_BUFFER, 12 * sizeof(GLfloat), vertices, GL_STATIC_DRAW));
     if (uvBuffer) {
-        glBindBuffer(GL_ARRAY_BUFFER, uvBuffer);
-        glBufferData(GL_ARRAY_BUFFER, 12, uvs, GL_STATIC_DRAW);
+        gl(BindBuffer(GL_ARRAY_BUFFER, uvBuffer));
+        gl(BufferData(GL_ARRAY_BUFFER, 12 * sizeof(GLshort), uvs, GL_STATIC_DRAW));
     }
     if (colourBuffer) {
-        glBindBuffer(GL_ARRAY_BUFFER, colourBuffer);
-        glBufferData(GL_ARRAY_BUFFER, 24, colours, GL_STATIC_DRAW);
+        gl(BindBuffer(GL_ARRAY_BUFFER, colourBuffer));
+        gl(BufferData(GL_ARRAY_BUFFER, 24 * sizeof(GLbyte), colours, GL_STATIC_DRAW));
     }
 }
 
@@ -54,7 +54,7 @@ std::optional<Poster> Poster::create(
     Texture const * const *textures
 ) {
     GLuint buffers[3];
-    glGenBuffers(3, buffers);
+    gl(GenBuffers(3, buffers));
     for (int i = 0; i < 3; i++) {
         if (!buffers[i]) {
             spdlog::error("Failed to set up buffers for poster");

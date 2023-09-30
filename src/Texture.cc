@@ -3,6 +3,7 @@
 #include <SDL_opengl.h>
 #include <SDL_image.h>
 #include <spdlog/spdlog.h>
+#include "Util.hh"
 
 Texture::Texture(GLuint id, glm::uvec2 size):
     id(id),
@@ -13,11 +14,11 @@ Texture::Texture(GLuint id, glm::uvec2 size):
 }
 
 Texture::~Texture() {
-    glDeleteTextures(1, &id);
+    gl(DeleteTextures(1, &id));
 }
 
 void Texture::bind() const {
-    glBindTexture(GL_TEXTURE_2D, id);
+    gl(BindTexture(GL_TEXTURE_2D, id));
 }
 
 std::optional<Texture> Texture::create(char const *filename) {
@@ -27,11 +28,11 @@ std::optional<Texture> Texture::create(char const *filename) {
         spdlog::error("Couldn't load image. SDL_Image: {}", IMG_GetError());
         return {};
     }
-    glGenTextures(1, &id);
-    glBindTexture(GL_TEXTURE_2D, id);
+    gl(GenTextures(1, &id));
+    gl(BindTexture(GL_TEXTURE_2D, id));
     int mode = GL_RGB;
     if (surface->format->BytesPerPixel == 4) mode = GL_RGBA;
-    glTexImage2D(
+    gl(TexImage2D(
         GL_TEXTURE_2D,
         0,
         mode,
@@ -41,8 +42,8 @@ std::optional<Texture> Texture::create(char const *filename) {
         mode,
         GL_UNSIGNED_BYTE,
         surface->pixels
-    );
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    ));
+    gl(TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+    gl(TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
     return Texture(id, glm::uvec2(surface->w, surface->h));
 }

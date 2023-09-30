@@ -2,12 +2,19 @@
 
 #include <glm/vec2.hpp>
 #include <glm/vec4.hpp>
+#include <spdlog/spdlog.h>
+
+#define gl(call) gl##call;checkGl(__LINE__, __FILE__)
+
+void checkGl(int line, char const *file);
 
 /**
  * Just contains random utility crap.
  */
 namespace Util {
     using namespace glm;
+    
+    void checkGl(int line, char const *file);
 
     /**
      * A nice rectangle consisting of a position vector and a size vector.
