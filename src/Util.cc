@@ -1,12 +1,25 @@
 #include "Util.hh"
 #include <GL/glew.h>
 #include <spdlog/spdlog.h>
+#include <fstream>
 
 void checkGl(int line, char const *file) {
     GLenum err;
     while((err = glGetError()) != GL_NO_ERROR) {
         spdlog::error("gl error 0x{:x} at {}:{}", err, file, line);
     }
+}
+
+std::optional<std::string> Util::loadString(char const *file) {
+    std::ifstream ifs(file);
+    if (ifs.fail()) {
+        spdlog::error("Couldn't open file {}", file);
+        return {};
+    }
+    return std::string(
+        std::istreambuf_iterator<char>(ifs),
+        std::istreambuf_iterator<char>()
+    );
 }
 
 Util::Rect::Rect() {

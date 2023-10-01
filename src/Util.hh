@@ -13,8 +13,13 @@ void checkGl(int line, char const *file);
  */
 namespace Util {
     using namespace glm;
-    
-    void checkGl(int line, char const *file);
+
+    /**
+     * Reads in a file and puts the whole thing in a string.
+     * @param file is the name of the file to load from.
+     * @return the created string, or nothing if it's screwed.
+     */
+    std::optional<std::string> loadString(char const *file);
 
     /**
      * A nice rectangle consisting of a position vector and a size vector.
@@ -50,8 +55,9 @@ namespace Util {
             Rect flipped(bool vertical, bool horizontal);
     };
 
-    typedef glm::bvec4 Colour;
+    typedef glm::uvec4 Colour;
 
     Colour const WHITE = Colour(255, 255, 255, 255);
     Colour const BLACK = Colour(0, 0, 0, 255);
+    Colour const GREEN = Colour(0, 255, 0, 255);
 };

@@ -5,7 +5,7 @@
  * @param colour is the colour to fill with.
  * @param array is an array of bytes, needs to be at least 24 entries long.
  */
-void fillColourArray(Util::Colour colour, GLbyte *array) {
+void fillColourArray(Util::Colour colour, GLubyte *array) {
     for (int i = 0; i < 6; i++) {
         array[i * 4] = colour.r;
         array[i * 4 + 1] = colour.g;
@@ -37,9 +37,11 @@ Poster::Poster(
         gl(BindBuffer(GL_ARRAY_BUFFER, colourBuffer));
         gl(BufferData(GL_ARRAY_BUFFER, 24 * sizeof(GLbyte), colours, GL_STATIC_DRAW));
     }
+    spdlog::info("Poster constructor");
 }
 
 Poster::~Poster() {
+    spdlog::info("Poster deconstructor");
 }
 
 unsigned int Poster::predraw() {
@@ -54,13 +56,7 @@ std::optional<Poster> Poster::create(
     Texture const * const *textures
 ) {
     GLuint buffers[3];
-    gl(GenBuffers(3, buffers));
-    for (int i = 0; i < 3; i++) {
-        if (!buffers[i]) {
-            spdlog::error("Failed to set up buffers for poster");
-            return {};
-        }
-    }
+    if (!makeBuffers(buffers)) return {};
     return Poster(
         buffers[0],
         buffers[1],

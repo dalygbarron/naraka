@@ -14,7 +14,7 @@ Texture::Texture(GLuint id, glm::uvec2 size):
 }
 
 Texture::~Texture() {
-    gl(DeleteTextures(1, &id));
+    //gl(DeleteTextures(1, &id));
 }
 
 void Texture::bind() const {
@@ -35,7 +35,7 @@ std::optional<Texture> Texture::create(char const *filename) {
     gl(TexImage2D(
         GL_TEXTURE_2D,
         0,
-        mode,
+        GL_RGBA,
         surface->w,
         surface->h,
         0,
@@ -45,5 +45,7 @@ std::optional<Texture> Texture::create(char const *filename) {
     ));
     gl(TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
     gl(TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+    gl(TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
+    gl(TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
     return Texture(id, glm::uvec2(surface->w, surface->h));
 }

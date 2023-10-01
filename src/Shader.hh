@@ -64,11 +64,21 @@ class Shader {
                  * it to update it's shit if it wants.
                  */
                 virtual unsigned int predraw() = 0;
+
+                /**
+                 * Creates the 3 buffers that a drawable needs, and checks they
+                 * were created, logging an error if not.
+                 * @param buffers is a reference to an array of three future
+                 *        buffer names.
+                 * @return true if it worked and false if any failed.
+                 */
+                static bool makeBuffers(GLuint *buffers);
         };
 
     private:
         /**
          * Just inserts all the content of a shader.
+         * @param vao vertex array object.
          * @param program full shader program, managed by this.
          * @param posAttr vertex pos shader attribute.
          * @param uvAttr vertex uv shader attribute.
@@ -81,6 +91,7 @@ class Shader {
          * @param extras pointer to array of extra uniforms, managed by this.
          */
         Shader(
+            GLuint vao,
             GLuint program,
             GLint posAttr,
             GLint uvAttr,
@@ -94,6 +105,7 @@ class Shader {
         );
 
     public:
+        GLuint const vao;
         GLuint const program;
         GLint const posAttr;
         GLint const uvAttr;
@@ -112,7 +124,7 @@ class Shader {
         in mediump vec4 vColour;
         out vec4 fragColor;
         void main() {
-            fragColor = texture(tex, vTextureCoord) * vColour;
+            fragColor = texture(tex, vTextureCoord);// * vColour;
         }
         )"""";
         constexpr static char const * const defaultVert = R""""(
@@ -123,13 +135,10 @@ class Shader {
         uniform vec2 canvasInv;
         uniform vec2 inv_tex;
         out highp vec2 vTextureCoord;
-        out highp vec2 vPosition;
         out mediump vec4 vColour;
         void main() {
-            gl_Position = vec4(
-            position * canvasInv * 2.0 - vec2(1.0, 1.0), 0.0, 1.0);
+            gl_Position = vec4(position * canvasInv * 2.0 - vec2(1.0, 1.0), 0.0, 1.0);
             vTextureCoord = uv * inv_tex;
-            vPosition = position;
             vColour = colour;
         }
         )"""";
@@ -138,6 +147,12 @@ class Shader {
          * Destroys the shader program and managed memory.
          */
         ~Shader();
+
+        /**
+         * Updates the shader with the current time.
+         * @param time is the time since the program started.
+         */
+        void update(float time);
 
         /**
          * Draws a drawable on the screen.

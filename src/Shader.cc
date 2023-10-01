@@ -83,13 +83,26 @@ Shader::Drawable::Drawable(
 }
 
 Shader::Drawable::~Drawable() {
-    gl(DeleteBuffers(1, &(vertexBuffer)));
-    if (uvBuffer) gl(DeleteBuffers(1, &(uvBuffer)));
-    if (colourBuffer) gl(DeleteBuffers(1, &(colourBuffer)));
+    //gl(DeleteBuffers(1, &(vertexBuffer)));
+    //if (uvBuffer) gl(DeleteBuffers(1, &(uvBuffer)));
+    //if (colourBuffer) gl(DeleteBuffers(1, &(colourBuffer)));
     //delete[] textures;
 }
 
+bool Shader::Drawable::makeBuffers(GLuint *buffers) {
+    gl(GenBuffers(3, buffers));
+    for (int i = 0; i < 3; i++) {
+        if (!buffers[i]) {
+            spdlog::error("Failed to set up buffers drawable");
+            if (i > 0) glDeleteBuffers(i, buffers);
+            return false;
+        }
+    }
+    return true;
+}
+
 Shader::Shader(
+    GLuint vao,
     GLuint program,
     GLint posAttr,
     GLint uvAttr,
@@ -101,6 +114,7 @@ Shader::Shader(
     unsigned int nExtras,
     GLint *extras
 ):
+    vao(vao),
     program(program),
     posAttr(posAttr),
     uvAttr(uvAttr),
@@ -116,38 +130,47 @@ Shader::Shader(
 }
 
 Shader::~Shader() {
-    gl(DeleteProgram(program));
-    delete[] samplers;
-    delete[] extras;
+    //gl(DeleteProgram(program));
+    //delete[] samplers;
+    //delete[] extras;
+}
+
+void Shader::update(float time) {
+    gl(UseProgram(program));
+    gl(Uniform1f(timeUni, time));
 }
 
 void Shader::draw(Drawable &drawable) {
     unsigned int n = drawable.predraw();
+    gl(BindVertexArray(vao));
     gl(UseProgram(program));
     gl(BindBuffer(GL_ARRAY_BUFFER, drawable.vertexBuffer));
-    gl(EnableVertexAttribArray(posAttr));
-    if (uvAttr) gl(EnableVertexAttribArray(uvAttr));
-    if (colAttr) gl(EnableVertexAttribArray(colAttr));
     gl(VertexAttribPointer(posAttr, 2, GL_FLOAT, false, 0, 0));
+    gl(EnableVertexAttribArray(posAttr));
     if (drawable.uvBuffer) {
         gl(BindBuffer(GL_ARRAY_BUFFER, drawable.uvBuffer));
         gl(VertexAttribPointer(uvAttr, 2, GL_SHORT, false, 0, 0));
     }
+    if (uvAttr != -1) gl(EnableVertexAttribArray(uvAttr));
     if (drawable.colourBuffer) {
         gl(BindBuffer(GL_ARRAY_BUFFER, drawable.colourBuffer));
-        gl(VertexAttribPointer(colAttr, 4, GL_BYTE, true, 0, 0));
+        gl(VertexAttribPointer(colAttr, 4, GL_UNSIGNED_BYTE, true, 0, 0));
     }
+    if (colAttr != -1) gl(EnableVertexAttribArray(colAttr));
     if (drawable.nTextures > 0) {
         for (int i = 0; i < fmin(drawable.nTextures, nSamplers); i++) {
             gl(ActiveTexture(GL_TEXTURE0 + i));
             drawable.textures[i]->bind();
-            if (samplers[i].sampler) gl(Uniform1i(samplers[i].sampler, i));
-            if (samplers[i].invSize) {
+            if (samplers[i].sampler != -1) {
+                gl(Uniform1i(samplers[i].sampler, i));
+            }
+            if (samplers[i].invSize != -1) {
                 gl(Uniform2f(
                     samplers[i].invSize,
                     drawable.textures[i]->invSize.x,
                     drawable.textures[i]->invSize.y
                 ));
+                spdlog::info("{} {} {}", drawable.vertexBuffer, drawable.textures[i]->invSize.x, drawable.textures[i]->invSize.y);
             }
         }
     }
@@ -195,6 +218,16 @@ std::optional<Shader> Shader::create(
     gl(DetachShader(program, vert));
     gl(DeleteShader(frag));
     gl(DeleteShader(vert));
+    // set up vao
+    GLuint vao;
+    gl(GenVertexArrays(1, &vao));
+    if (!vao) {
+        spdlog::error("Couldn't create vao");
+        gl(DeleteShader(frag));
+        gl(DeleteShader(vert));
+        gl(DeleteProgram(program));
+        return {};
+    }
     // Set up engine wide attributes and uniforms.
     gl(UseProgram(program));
     GLint position = gl(GetAttribLocation(program, "position"));
@@ -206,8 +239,8 @@ std::optional<Shader> Shader::create(
         // TODO: need to get screen size here.
         gl(Uniform2f(
             invCanvas,
-            0.1,
-            0.1
+            0.0009765625,
+            0.001302083333333
         ));
     }
     // Set up samplers and extras
@@ -219,21 +252,22 @@ std::optional<Shader> Shader::create(
             program,
             invNameBuffer
         ));
-        if (!samplerUniforms[i].sampler) {
+        if (samplerUniforms[i].sampler == -1) {
             spdlog::warn("program {} lacks uniform {}", program, samplers[i]);
         }
-        if (!samplerUniforms[i].invSize) {
+        if (samplerUniforms[i].invSize == -1) {
             spdlog::warn("program {} lacks uniform {}", program, invNameBuffer);
         }
     }
     GLint *shaderExtras = new GLint[nExtras];
     for (int i = 0; i < nExtras; i++) {
         shaderExtras[i] = gl(GetUniformLocation(program, extras[i]));
-        if (!shaderExtras[i]) {
+        if (shaderExtras[i] == -1) {
             spdlog::warn("program {} lacks uniform {}", program, extras[i]);
         }
     }
     return Shader(
+        vao,
         program,
         position,
         uv,

@@ -1,0 +1,27 @@
+lemme write down the process to be clear about this shit.
+
+
+Creation of a shader program:
+this is simple, just links the shaders and finds uniforms. nothing spicy.
+
+Creation of a drawable (eg poster):
+we generate 3 vertex buffers
+we bind the buffers, then fill them with the data we have made with static draw
+mode.
+
+shader draws a drawable:
+bind program
+bind vertex buffer
+set vertex attrib pointers (step that requires a VAO).
+set up texture uniforms for the drawable's specific textures.
+call drawArrays
+
+
+so right now our problem is that drawarrays and enablevertexattribarray both
+require that we have a VAO object bound.
+Supposedly, if we had a VAO object for every drawable, we would be able to
+set them up once and then swap between them with a single bind call. However,
+I seemed to find that the VAO needs info that makes it inseperable from the
+shader which would make the drawable inseperable from the shader which I don't
+particularly want.
+Yeah fuck it we'll just have a VAO per shader and do everything the same

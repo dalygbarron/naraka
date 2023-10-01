@@ -8,7 +8,7 @@ class Poster: public Shader::Drawable {
     private:
         GLfloat vertices[12];
         GLshort uvs[12];
-        GLbyte colours[24];
+        GLubyte colours[24];
 
         /**
          * Creates a poster, puts in most of the stuff that it uses, but this

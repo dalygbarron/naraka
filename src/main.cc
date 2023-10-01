@@ -10,6 +10,7 @@
 #include "Texture.hh"
 #include "Shader.hh"
 #include "Poster.hh"
+#include "Batch.hh"
 #include "Util.hh"
 
 #define SCREEN_WIDTH 1024
@@ -95,21 +96,26 @@ void close() {
 int main(int argc, char const **argv) {
     if (!init()) goto end;
     {
-        std::optional<Texture> tex = Texture::create("pic.png");
+        std::optional<std::string> fragShader = Util::loadString(
+            "data/frag.frag"
+        );
+        if (!fragShader) {
+            goto end;
+        }
+        std::optional<Texture> tex = Texture::create("data/pic.png");
         if (!tex) {
             spdlog::error("texture load fails");
             goto end;
         }
-        
-        std::optional<Shader> shader = Shader::create();
+        std::optional<Shader> shader = Shader::create((*fragShader).c_str());
         if (!shader) {
             spdlog::error("shader load fails");
             goto end;
         }
         Texture *textures = &(*tex);
         std::optional<Poster> poster = Poster::create(
-            Util::Rect(10, 10, 100, 200),
-            Util::Rect(10, 10, 100, 100),
+            Util::Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT),
+            Util::Rect(0, 0, 680, 676),
             Util::WHITE,
             1,
             &textures
@@ -118,14 +124,35 @@ int main(int argc, char const **argv) {
             spdlog::error("Couldn't make poster");
             goto end;
         }
+        std::optional<Batch> batch = Batch::create(textures, 1024);
+        if (!batch) {
+            spdlog::error("Failed making batch");
+            goto end;
+        }
+        Util::Rect src;
+        for (int i = 0; i < 20; i++) {
+            src.pos.x = random() % 200;
+            src.pos.y = random() % 200;
+            src.size.x = random() % 200;
+            src.size.y = random() % 200;
+            batch->addComp(
+                src,
+                random() % 1024,
+                random() % 1024,
+                random() % 1024,
+                random() % 1024
+            );
+        }
         gl(ClearColor(0.f, 0.1f, 0.2f, 1.f));
         for (int i = 0; i < 5000; i++) {
             SDL_Event e;
             while (SDL_PollEvent(&e) != 0) {
                 if (e.type == SDL_QUIT) goto end;
             }
-            gl(Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+            shader->update(i);
+            gl(Clear(GL_COLOR_BUFFER_BIT));
             shader->draw(*poster);
+            shader->draw(*batch);
             SDL_GL_SwapWindow(window);
         }
     }

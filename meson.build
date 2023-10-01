@@ -4,6 +4,7 @@ sources = [
   'src/Texture.cc',
   'src/Shader.cc',
   'src/Poster.cc',
+  'src/Batch.cc',
   'src/Util.cc'
 ]
 deps = [
